@@ -4,14 +4,83 @@
 
 .blearui-mobileImgPreviewClipUpload-container {
   position: absolute;
-  border: 2px solid #717171;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  overflow: hidden;
   -webkit-box-sizing: content-box;
   -moz-box-sizing: content-box;
   box-sizing: content-box; }
 
+.blearui-mobileImgPreviewClipUpload-inner {
+  position: relative;
+  height: 100%;
+  overflow: hidden; }
+
+.blearui-mobileImgPreviewClipUpload-corner {
+  position: absolute; }
+  .blearui-mobileImgPreviewClipUpload-corner:before, .blearui-mobileImgPreviewClipUpload-corner:after {
+    position: absolute;
+    content: "";
+    background: #fff; }
+  .blearui-mobileImgPreviewClipUpload-corner:before {
+    width: 10px;
+    height: 2px; }
+  .blearui-mobileImgPreviewClipUpload-corner:after {
+    height: 10px;
+    width: 2px; }
+  .blearui-mobileImgPreviewClipUpload-corner_0 {
+    top: -3px;
+    left: -3px; }
+    .blearui-mobileImgPreviewClipUpload-corner_0:before {
+      left: 0;
+      top: 0; }
+    .blearui-mobileImgPreviewClipUpload-corner_0:after {
+      left: 0;
+      top: 0; }
+  .blearui-mobileImgPreviewClipUpload-corner_1 {
+    top: -3px;
+    right: -3px; }
+    .blearui-mobileImgPreviewClipUpload-corner_1:before {
+      right: 0;
+      top: 0; }
+    .blearui-mobileImgPreviewClipUpload-corner_1:after {
+      right: 0;
+      top: 0; }
+  .blearui-mobileImgPreviewClipUpload-corner_2 {
+    right: -3px;
+    bottom: -3px; }
+    .blearui-mobileImgPreviewClipUpload-corner_2:before {
+      right: 0;
+      bottom: 0; }
+    .blearui-mobileImgPreviewClipUpload-corner_2:after {
+      right: 0;
+      bottom: 0; }
+  .blearui-mobileImgPreviewClipUpload-corner_3 {
+    left: -3px;
+    bottom: -3px; }
+    .blearui-mobileImgPreviewClipUpload-corner_3:before {
+      left: 0;
+      bottom: 0; }
+    .blearui-mobileImgPreviewClipUpload-corner_3:after {
+      left: 0;
+      bottom: 0; }
+
 .blearui-mobileImgPreviewClipUpload-clone {
   position: absolute; }
+
+.blearui-mobileImgPreviewClipUpload-actions {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  color: #fff;
+  font-size: 14px;
+  text-align: center; }
+
+.blearui-mobileImgPreviewClipUpload-btn {
+  padding: 30px;
+  display: inline-block; }
+  .blearui-mobileImgPreviewClipUpload-btn:first-child {
+    float: left; }
+  .blearui-mobileImgPreviewClipUpload-btn:last-child {
+    float: right; }

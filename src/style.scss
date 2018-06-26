@@ -6,17 +6,127 @@
 
   &-container {
     position: absolute;
-    border: 2px solid #717171;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    overflow: hidden;
     -webkit-box-sizing: content-box;
     -moz-box-sizing: content-box;
     box-sizing: content-box;
   }
 
+  &-inner {
+    position: relative;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  &-corner {
+    position: absolute;
+    $size: 2px;
+    $offset: $size + 1;
+
+    &:before,
+    &:after {
+      position: absolute;
+      content: "";
+      background: #fff;
+    }
+
+    &:before {
+      width: 10px;
+      height: $size;
+    }
+
+    &:after {
+      height: 10px;
+      width: 2px;
+    }
+
+    &_0 {
+      top: -$offset;
+      left: -$offset;
+
+      &:before {
+        left: 0;
+        top: 0;
+      }
+
+      &:after {
+        left: 0;
+        top: 0;
+      }
+    }
+
+    &_1 {
+      top: -$offset;
+      right: -$offset;
+
+      &:before {
+        right: 0;
+        top: 0;
+      }
+
+      &:after {
+        right: 0;
+        top: 0;
+      }
+    }
+
+    &_2 {
+      right: -$offset;
+      bottom: -$offset;
+
+      &:before {
+        right: 0;
+        bottom: 0;
+      }
+
+      &:after {
+        right: 0;
+        bottom: 0;
+      }
+    }
+
+    &_3 {
+      left: -$offset;
+      bottom: -$offset;
+
+      &:before {
+        left: 0;
+        bottom: 0;
+      }
+
+      &:after {
+        left: 0;
+        bottom: 0;
+      }
+    }
+  }
+
   &-clone {
     position: absolute;
+  }
+
+  &-actions {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    color: #fff;
+    font-size: 14px;
+    text-align: center;
+  }
+
+  &-btn {
+    padding: 30px;
+    display: inline-block;
+
+    &:first-child {
+      float: left;
+    }
+
+    &:last-child {
+      float: right;
+    }
   }
 }

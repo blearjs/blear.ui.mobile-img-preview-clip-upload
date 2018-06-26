@@ -73,6 +73,12 @@ var reImage = /^image\//;
 var w = window;
 var URL = w[compatible.js('URL', w)];
 var namespace = 'blearui-mobileImgPreviewClipUpload';
+var initialTransform = {
+    translateX: 0,
+    translateY: 0,
+    scale: 1,
+    rotate: 0
+};
 
 var MobileImgPreviewClipUpload = UI.extend({
     className: 'MobileImgPreviewClipUpload',
@@ -123,6 +129,9 @@ var _windowEl = sole();
 var _windowContainerEl = sole();
 var _containerEl = sole();
 var _cloneEl = sole();
+var _cancelBtnEl = sole();
+var _restoreBtnEl = sole();
+var _completeBtnEl = sole();
 var _mask = sole();
 var _touchable = sole();
 var _createInputFileEl = sole();
@@ -149,6 +158,8 @@ var _adaptImageInWindow = sole();
 var _adaptImageInClip = sole();
 var _transformImage = sole();
 var _openUI = sole();
+var _closeUI = sole();
+var calculateSelection = sole();
 var proto = MobileImgPreviewClipUpload.prototype;
 
 proto[_initWindow] = function () {
@@ -165,6 +176,10 @@ proto[_initWindow] = function () {
     the[_windowContainerEl] = the[_window].getContainerEl();
     the[_containerEl] = selector.query('.' + namespace + '-container', the[_windowContainerEl])[0];
     the[_cloneEl] = selector.query('.' + namespace + '-clone', the[_windowContainerEl])[0];
+    var btns = selector.query('.' + namespace + '-btn', the[_windowContainerEl]);
+    the[_cancelBtnEl] = btns[0];
+    the[_restoreBtnEl] = btns[1];
+    the[_completeBtnEl] = btns[2];
     attribute.style(the[_containerEl], {
         width: options.clipWidth,
         height: options.clipHeight
@@ -176,6 +191,33 @@ proto[_initWindow] = function () {
         });
         the[_adaptImageInWindow]();
         the[_adaptImageInClip]();
+    });
+    event.on(the[_cancelBtnEl], 'click', function () {
+        the[_closeUI]();
+    });
+    event.on(the[_restoreBtnEl], 'click', function () {
+        attribute.style(the[_imageEl], {
+            transform: {
+                translateX: 0,
+                translateY: 0,
+                scale: 1,
+                rotate: 0
+            }
+        });
+        attribute.style(the[_cloneEl], {
+            transform: {
+                translateX: 0,
+                translateY: 0,
+                scale: 1,
+                rotate: 0
+            }
+        });
+        the[_imageX] = the[_imageY] = 0;
+        the[_imageScale] = 1;
+        the[_imageRoation] = 0;
+    });
+    event.on(the[_completeBtnEl], 'click', function () {
+
     });
 };
 
@@ -371,6 +413,9 @@ proto[_loadImage] = function () {
  */
 proto[_adaptImageInWindow] = function () {
     var the = this;
+    var options = the[_options];
+    var clipWidth = options.clipWidth;
+    var clipHeight = options.clipHeight;
     var imgWidth = the[_imageNatrualWidth];
     var imgHeight = the[_imageNatrualHeight];
     var winWidth = the[_windowWidth];
@@ -380,6 +425,7 @@ proto[_adaptImageInWindow] = function () {
     var winRatio = winWidth / winHeight;
     var visibleWidth = 0;
     var visibleHeight = 0;
+    var fixRatio = 0;
 
     if (winRatio > imgRatio) {
         visibleHeight = winHeight;
@@ -389,14 +435,27 @@ proto[_adaptImageInWindow] = function () {
         visibleHeight = visibleWidth / imgRatio;
     }
 
-    the[_imageScale] = visibleWidth / imgWidth;
+    if (visibleWidth < clipWidth) {
+        fixRatio = clipWidth / visibleWidth;
+        visibleWidth = clipWidth;
+        visibleHeight *= fixRatio;
+    }
+
+    if (visibleHeight < clipHeight) {
+        fixRatio = clipHeight / visibleHeight;
+        visibleHeight = clipHeight;
+        visibleWidth *= fixRatio;
+    }
+
+    the[_imageScale] = 1;
     the[_imageRoation] = the[_imageX] = the[_imageY] = 0;
     imageEl.className = namespace + '-image';
     attribute.style(imageEl, {
         width: the[_imageWidth] = visibleWidth,
         height: the[_imageHeight] = visibleHeight,
         left: the[_imageLeft] = (winWidth - visibleWidth) / 2,
-        top: the[_imageTop] = (winHeight - visibleHeight) / 2
+        top: the[_imageTop] = (winHeight - visibleHeight) / 2,
+        transform: initialTransform
     });
 };
 
@@ -419,7 +478,8 @@ proto[_adaptImageInClip] = function () {
         width: imageWidth,
         height: imageHeight,
         left: the[_clipLeft] = (clipWidth - imageWidth) / 2,
-        top: the[_clipTop] = (clipHeight - imageHeight) / 2
+        top: the[_clipTop] = (clipHeight - imageHeight) / 2,
+        transform: initialTransform
     });
 };
 
@@ -433,6 +493,26 @@ proto[_openUI] = function () {
     the[_cloneEl].src = the[_imageURL];
     the[_mask].open();
     the[_window].open();
+};
+
+/**
+ * 关闭操作界面
+ */
+proto[_closeUI] = function () {
+    var the = this;
+
+    modification.remove(the[_imageEl]);
+    // the[_cloneEl].src = '';
+    the[_mask].close();
+    the[_window].close();
+};
+
+/**
+ * 计算选区信息
+ */
+proto[calculateSelection] = function () {
+    var the = this;
+    var options = the[_options];
 };
 
 MobileImgPreviewClipUpload.defaults = defaults;
