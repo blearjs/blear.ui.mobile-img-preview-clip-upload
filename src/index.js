@@ -159,7 +159,7 @@ var _adaptImageInClip = sole();
 var _transformImage = sole();
 var _openUI = sole();
 var _closeUI = sole();
-var calculateSelection = sole();
+var _calculateSelection = sole();
 var proto = MobileImgPreviewClipUpload.prototype;
 
 proto[_initWindow] = function () {
@@ -217,7 +217,9 @@ proto[_initWindow] = function () {
         the[_imageRoation] = 0;
     });
     event.on(the[_completeBtnEl], 'click', function () {
+        var sel = the[_calculateSelection]();
 
+        console.log(sel);
     });
 };
 
@@ -228,21 +230,21 @@ proto[_initTouchable] = function () {
     var the = this;
     var currentX = 0;
     var currentY = 0;
+    var currentS = 0;
+    var currentR = 0;
     var transform = function () {
-        attribute.style(the[_imageEl], {
+        var style = {
             transform: {
                 translateX: currentX,
-                translateY: currentY
+                translateY: currentY,
+                scale: currentS,
+                rotate: currentR
             }
-        });
-        attribute.style(the[_cloneEl], {
-            transform: {
-                translateX: currentX,
-                translateY: currentY
-            }
-        });
+        };
+        attribute.style(the[_imageEl], style);
+        attribute.style(the[_cloneEl], style);
     };
-    // 自动修正，保证图片有完整区域在裁剪区
+    // 自动修正：保证图片有完整区域在裁剪区
     var transformEnd = function () {
         if (currentX + the[_clipLeft] > 0) {
             currentX = -the[_clipLeft];
@@ -258,6 +260,27 @@ proto[_initTouchable] = function () {
 
         the[_imageX] = currentX;
         the[_imageY] = currentY;
+        transform();
+    };
+    // 自动修正：保证图片是水平或垂直的
+    var pinchEnd = function () {
+        the[_imageRoation] %= 360;
+
+        // 0: < 45 || >= 315
+        // 90: >= 45 && < 135
+        // 180: >= 135 && < 225
+        // 270: >= 225 && < 315
+        if (the[_imageRoation] >= 45 && the[_imageRoation] < 135) {
+            the[_imageRoation] = 90;
+        } else if (the[_imageRoation] >= 135 && the[_imageRoation] < 225) {
+            the[_imageRoation] = 180;
+        } else if (the[_imageRoation] >= 225 && the[_imageRoation] < 315) {
+            the[_imageRoation] = 270;
+        } else {
+            the[_imageRoation] = 0;
+        }
+
+        currentR = the[_imageRoation];
         transform();
     };
 
@@ -283,16 +306,17 @@ proto[_initTouchable] = function () {
         transformEnd();
     });
 
-    // the[_touchable].on('pinch', function (meta) {
-    //     currentRotation = startRotation + meta.rotation;
-    //     currentScale = startScale * meta.scale;
-    //     transform();
-    // });
-    //
-    // the[_touchable].on('pinchEnd', function (meta) {
-    //     startRotation += meta.rotation;
-    //     startScale *= meta.scale;
-    // });
+    the[_touchable].on('pinch', function (meta) {
+        currentR = the[_imageRoation] + meta.rotation;
+        currentS = the[_imageScale] * meta.scale;
+        transform();
+    });
+
+    the[_touchable].on('pinchEnd', function (meta) {
+        the[_imageRoation] += meta.rotation;
+        the[_imageScale] *= meta.scale;
+        pinchEnd();
+    });
 };
 
 proto[_initMask] = function () {
@@ -510,9 +534,26 @@ proto[_closeUI] = function () {
 /**
  * 计算选区信息
  */
-proto[calculateSelection] = function () {
+proto[_calculateSelection] = function () {
     var the = this;
     var options = the[_options];
+    var displayScale = the[_imageWidth] / the[_imageNatrualWidth];
+    var displayLeft = -the[_clipLeft] - the[_imageX];
+    var displayTop = -the[_clipTop] - the[_imageY];
+    var displayWidth = options.clipWidth;
+    var displayHeight = options.clipHeight;
+
+    var srcLeft = displayLeft / displayScale;
+    var srcTop = displayTop / displayScale;
+    var srcWidth = displayWidth / displayScale;
+    var srcHeight = displayHeight / displayScale;
+
+    return {
+        srcLeft: srcLeft,
+        srcTop: srcTop,
+        srcWidth: srcWidth,
+        srcHeight: srcHeight
+    };
 };
 
 MobileImgPreviewClipUpload.defaults = defaults;
