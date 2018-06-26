@@ -228,9 +228,12 @@ proto[_initWindow] = function () {
  */
 proto[_initTouchable] = function () {
     var the = this;
+    var options = the[_options];
+    var clipWidth = options.clipWidth;
+    var clipHeight = options.clipHeight;
     var currentX = 0;
     var currentY = 0;
-    var currentS = 0;
+    var currentS = 1;
     var currentR = 0;
     var transform = function () {
         var style = {
@@ -246,16 +249,35 @@ proto[_initTouchable] = function () {
     };
     // 自动修正：保证图片有完整区域在裁剪区
     var transformEnd = function () {
-        if (currentX + the[_clipLeft] > 0) {
-            currentX = -the[_clipLeft];
-        } else if (currentX - the[_clipLeft] < 0) {
-            currentX = the[_clipLeft];
+        // 坐标系内的四要素
+        var viewClipLeft;
+        var viewClipTop;
+        var coordinateWidth;
+        var coordinateHeight;
+        switch (the[_imageRoation]) {
+            case 0:
+            case 180:
+                the[_clipLeft] = (the[_imageWidth] - clipWidth) / 2;
+                the[_clipTop] = (the[_imageHeight] - clipHeight) / 2;
+                break;
+
+            case 90:
+            case 270:
+                the[_clipLeft] = (the[_imageHeight] - clipWidth) / 2;
+                the[_clipTop] = (the[_imageWidth] - clipHeight) / 2;
+                break;
         }
 
-        if (currentY + the[_clipTop] > 0) {
-            currentY = -the[_clipTop];
-        } else if (currentY - the[_clipTop] < 0) {
+        if (currentX - the[_clipLeft] > 0) {
+            currentX = the[_clipLeft];
+        } else if (currentX + the[_clipLeft] < 0) {
+            currentX = -the[_clipLeft];
+        }
+
+        if (currentY - the[_clipTop] > 0) {
             currentY = the[_clipTop];
+        } else if (currentY + the[_clipTop] < 0) {
+            currentY = -the[_clipTop];
         }
 
         the[_imageX] = currentX;
@@ -303,6 +325,7 @@ proto[_initTouchable] = function () {
             return;
         }
 
+        currentR = the[_imageRoation] = 90;
         transformEnd();
     });
 
@@ -498,11 +521,13 @@ proto[_adaptImageInClip] = function () {
     // var imageTop = the[_imageTop];
     // var imageScale = the[_imageScale];
     // var imageRotation = the[_imageRoation];
+    the[_clipLeft] = (imageWidth - clipWidth) / 2;
+    the[_clipTop] = (imageHeight - clipHeight) / 2;
     attribute.style(the[_cloneEl], {
         width: imageWidth,
         height: imageHeight,
-        left: the[_clipLeft] = (clipWidth - imageWidth) / 2,
-        top: the[_clipTop] = (clipHeight - imageHeight) / 2,
+        left: -the[_clipLeft],
+        top: -the[_clipTop],
         transform: initialTransform
     });
 };
