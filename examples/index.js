@@ -8,5 +8,12 @@
 'use strict';
 
 
+var MobileImgPreviewClipUpload = require('../src/index');
 
 
+var mip = new MobileImgPreviewClipUpload();
+
+
+document.getElementById('start').onclick = function () {
+    mip.start();
+};
