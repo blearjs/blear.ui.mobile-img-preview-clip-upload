@@ -189,6 +189,8 @@ proto[_initWindow] = function () {
             width: the[_windowWidth] = pos.width,
             height: the[_windowHeight] = pos.height
         });
+        the[_imageEl].className = namespace + '-image';
+        the[_imageRoation] = 0;
         the[_adaptImageInWindow]();
         the[_adaptImageInClip]();
     });
@@ -302,8 +304,18 @@ proto[_initTouchable] = function () {
             the[_imageRoation] = 0;
         }
 
-        currentR = the[_imageRoation];
-        transform();
+        // 仅缩放不旋转
+        if (currentR === the[_imageRoation]) {
+            transform();
+        }
+        // 仅旋转不缩放
+        else {
+            currentR = the[_imageRoation];
+            currentS = 1;
+            // 旋转之后重新适配到中心最大化
+            the[_adaptImageInWindow]();
+            the[_adaptImageInClip]();
+        }
     };
 
     the[_touchable] = new Touchable({
@@ -325,7 +337,6 @@ proto[_initTouchable] = function () {
             return;
         }
 
-        currentR = the[_imageRoation] = 90;
         transformEnd();
     });
 
@@ -468,41 +479,60 @@ proto[_adaptImageInWindow] = function () {
     var winWidth = the[_windowWidth];
     var winHeight = the[_windowHeight];
     var imageEl = the[_imageEl];
-    var imgRatio = imgWidth / imgHeight;
+    var imgRatio = 1;
     var winRatio = winWidth / winHeight;
-    var visibleWidth = 0;
-    var visibleHeight = 0;
+    var displayWidth = 0;
+    var displayHeight = 0;
     var fixRatio = 0;
+    var vertical = false;
+
+    switch (the[_imageRoation]) {
+        case 0:
+        case 180:
+            imgRatio = imgWidth / imgHeight;
+            break;
+
+        case 90:
+        case 270:
+            imgRatio = imgHeight / imgWidth;
+            vertical = true;
+            break;
+    }
 
     if (winRatio > imgRatio) {
-        visibleHeight = winHeight;
-        visibleWidth = visibleHeight * imgRatio;
+        displayHeight = winHeight;
+        displayWidth = displayHeight * imgRatio;
     } else {
-        visibleWidth = winWidth;
-        visibleHeight = visibleWidth / imgRatio;
+        displayWidth = winWidth;
+        displayHeight = displayWidth / imgRatio;
     }
 
-    if (visibleWidth < clipWidth) {
-        fixRatio = clipWidth / visibleWidth;
-        visibleWidth = clipWidth;
-        visibleHeight *= fixRatio;
+    if (displayWidth < clipWidth) {
+        fixRatio = clipWidth / displayWidth;
+        displayWidth = clipWidth;
+        displayHeight *= fixRatio;
     }
 
-    if (visibleHeight < clipHeight) {
-        fixRatio = clipHeight / visibleHeight;
-        visibleHeight = clipHeight;
-        visibleWidth *= fixRatio;
+    if (displayHeight < clipHeight) {
+        fixRatio = clipHeight / displayHeight;
+        displayHeight = clipHeight;
+        displayWidth *= fixRatio;
     }
 
     the[_imageScale] = 1;
-    the[_imageRoation] = the[_imageX] = the[_imageY] = 0;
-    imageEl.className = namespace + '-image';
+    the[_imageX] = 0;
+    the[_imageY] = 0;
     attribute.style(imageEl, {
-        width: the[_imageWidth] = visibleWidth,
-        height: the[_imageHeight] = visibleHeight,
-        left: the[_imageLeft] = (winWidth - visibleWidth) / 2,
-        top: the[_imageTop] = (winHeight - visibleHeight) / 2,
-        transform: initialTransform
+        width: the[_imageWidth] = vertical ? displayHeight : displayWidth,
+        height: the[_imageHeight] = vertical ? displayWidth : displayHeight,
+        left: the[_imageLeft] = (winWidth - the[_imageWidth]) / 2,
+        top: the[_imageTop] = (winHeight - the[_imageHeight]) / 2,
+        transform: {
+            rotate: the[_imageRoation],
+            scale: 1,
+            translateX: 0,
+            translateY: 0
+        }
     });
 };
 
@@ -528,7 +558,12 @@ proto[_adaptImageInClip] = function () {
         height: imageHeight,
         left: -the[_clipLeft],
         top: -the[_clipTop],
-        transform: initialTransform
+        transform: {
+            rotate: the[_imageRoation],
+            scale: 1,
+            translateX: 0,
+            translateY: 0
+        }
     });
 };
 
@@ -563,21 +598,58 @@ proto[_calculateSelection] = function () {
     var the = this;
     var options = the[_options];
     var displayScale = the[_imageWidth] / the[_imageNatrualWidth];
-    var displayLeft = -the[_clipLeft] - the[_imageX];
-    var displayTop = -the[_clipTop] - the[_imageY];
-    var displayWidth = options.clipWidth;
-    var displayHeight = options.clipHeight;
+    var displayLeft = the[_clipLeft] - the[_imageX];
+    var displayTop = the[_clipTop] - the[_imageY];
+    var clipWidth = options.clipWidth;
+    var clipHeight = options.clipHeight;
+    var displayWidth = 0;
+    var displayHeight = 0;
+    var srcLeft = 0;
+    var srcTop = 0;
+    var srcWidth = 0;
+    var srcHeight = 0;
 
-    var srcLeft = displayLeft / displayScale;
-    var srcTop = displayTop / displayScale;
-    var srcWidth = displayWidth / displayScale;
-    var srcHeight = displayHeight / displayScale;
+    switch (the[_imageRoation]) {
+        case 0:
+            srcLeft = displayLeft;
+            srcTop = displayTop;
+            srcWidth = clipWidth;
+            srcHeight = clipHeight;
+            break;
+
+        case 90:
+            displayWidth = the[_imageHeight];
+            displayHeight = the[_imageWidth];
+            srcLeft = displayTop;
+            srcTop = displayWidth - displayLeft - clipWidth;
+            srcWidth = clipHeight;
+            srcHeight = clipWidth;
+            break;
+
+        case 180:
+            displayWidth = the[_imageWidth];
+            displayHeight = the[_imageHeight];
+            srcLeft = displayWidth - displayLeft - clipWidth;
+            srcTop = displayHeight - displayTop - clipHeight;
+            srcWidth = clipWidth;
+            srcHeight = clipHeight;
+            break;
+
+        case 270:
+            displayWidth = the[_imageHeight];
+            displayHeight = the[_imageWidth];
+            srcLeft = displayHeight - displayTop - clipHeight;
+            srcTop = displayLeft;
+            srcWidth = clipHeight;
+            srcHeight = clipWidth;
+            break;
+    }
 
     return {
-        srcLeft: srcLeft,
-        srcTop: srcTop,
-        srcWidth: srcWidth,
-        srcHeight: srcHeight
+        srcLeft: srcLeft / displayScale,
+        srcTop: srcTop / displayScale,
+        srcWidth: srcWidth / displayScale,
+        srcHeight: srcHeight / displayScale
     };
 };
 
