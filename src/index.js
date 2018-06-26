@@ -16,6 +16,7 @@ var attribute = require('blear.core.attribute');
 var selector = require('blear.core.selector');
 var compatible = require('blear.utils.compatible');
 var loader = require('blear.utils.loader');
+var Touchable = require('blear.classes.touchable');
 
 var defaults = {
     /**
@@ -82,6 +83,7 @@ var MobileImgPreviewClipUpload = UI.extend({
         MobileImgPreviewClipUpload.parent(the);
         the[_reExtension] = new RegExp('\\.(' + options.fileExtension.replace(/,/g, '|').replace(/\./g, '') + ')$', 'i');
         the[_initWindow]();
+        the[_initTouchable]();
         the[_initMask]();
         the[_initNode]();
         the[_initEvent]();
@@ -115,11 +117,14 @@ var _initNode = sole();
 var _initEvent = sole();
 var _initWindow = sole();
 var _initMask = sole();
+var _initTouchable = sole();
 var _window = sole();
+var _windowEl = sole();
 var _windowContainerEl = sole();
 var _containerEl = sole();
 var _cloneEl = sole();
 var _mask = sole();
+var _touchable = sole();
 var _createInputFileEl = sole();
 var _preview = sole();
 var _initClip = sole();
@@ -134,10 +139,15 @@ var _imageWidth = sole();
 var _imageHeight = sole();
 var _imageLeft = sole();
 var _imageTop = sole();
+var _imageX = sole();
+var _imageY = sole();
 var _imageScale = sole();
 var _imageRoation = sole();
+var _clipLeft = sole();
+var _clipTop = sole();
 var _adaptImageInWindow = sole();
 var _adaptImageInClip = sole();
+var _transformImage = sole();
 var _openUI = sole();
 var proto = MobileImgPreviewClipUpload.prototype;
 
@@ -151,6 +161,7 @@ proto[_initWindow] = function () {
         height: '100%'
     });
     the[_window].setHTML(require('./template.html'));
+    the[_windowEl] = the[_window].getWindowEl();
     the[_windowContainerEl] = the[_window].getContainerEl();
     the[_containerEl] = selector.query('.' + namespace + '-container', the[_windowContainerEl])[0];
     the[_cloneEl] = selector.query('.' + namespace + '-clone', the[_windowContainerEl])[0];
@@ -168,6 +179,79 @@ proto[_initWindow] = function () {
     });
 };
 
+/**
+ * 初始化触控
+ */
+proto[_initTouchable] = function () {
+    var the = this;
+    var currentX = 0;
+    var currentY = 0;
+    var transform = function () {
+        attribute.style(the[_imageEl], {
+            transform: {
+                translateX: currentX,
+                translateY: currentY
+            }
+        });
+        attribute.style(the[_cloneEl], {
+            transform: {
+                translateX: currentX,
+                translateY: currentY
+            }
+        });
+    };
+    // 自动修正，保证图片有完整区域在裁剪区
+    var transformEnd = function () {
+        if (currentX + the[_clipLeft] > 0) {
+            currentX = -the[_clipLeft];
+        } else if (currentX - the[_clipLeft] < 0) {
+            currentX = the[_clipLeft];
+        }
+
+        if (currentY + the[_clipTop] > 0) {
+            currentY = -the[_clipTop];
+        } else if (currentY - the[_clipTop] < 0) {
+            currentY = the[_clipTop];
+        }
+
+        the[_imageX] = currentX;
+        the[_imageY] = currentY;
+        transform();
+    };
+
+    the[_touchable] = new Touchable({
+        el: the[_windowEl]
+    });
+
+    the[_touchable].on('dragMove', function (meta) {
+        if (meta.length > 1) {
+            return;
+        }
+
+        currentX = the[_imageX] + meta.deltaX;
+        currentY = the[_imageY] + meta.deltaY;
+        transform();
+    });
+
+    the[_touchable].on('dragEnd', function (meta) {
+        if (meta.length > 1) {
+            return;
+        }
+
+        transformEnd();
+    });
+
+    // the[_touchable].on('pinch', function (meta) {
+    //     currentRotation = startRotation + meta.rotation;
+    //     currentScale = startScale * meta.scale;
+    //     transform();
+    // });
+    //
+    // the[_touchable].on('pinchEnd', function (meta) {
+    //     startRotation += meta.rotation;
+    //     startScale *= meta.scale;
+    // });
+};
 
 proto[_initMask] = function () {
     var the = this;
@@ -306,7 +390,7 @@ proto[_adaptImageInWindow] = function () {
     }
 
     the[_imageScale] = visibleWidth / imgWidth;
-    the[_imageRoation] = 0;
+    the[_imageRoation] = the[_imageX] = the[_imageY] = 0;
     imageEl.className = namespace + '-image';
     attribute.style(imageEl, {
         width: the[_imageWidth] = visibleWidth,
@@ -315,6 +399,7 @@ proto[_adaptImageInWindow] = function () {
         top: the[_imageTop] = (winHeight - visibleHeight) / 2
     });
 };
+
 
 /**
  * 在裁剪窗口适配图片
@@ -333,8 +418,8 @@ proto[_adaptImageInClip] = function () {
     attribute.style(the[_cloneEl], {
         width: imageWidth,
         height: imageHeight,
-        left: (clipWidth - imageWidth) / 2,
-        top: (clipHeight - imageHeight) / 2
+        left: the[_clipLeft] = (clipWidth - imageWidth) / 2,
+        top: the[_clipTop] = (clipHeight - imageHeight) / 2
     });
 };
 
