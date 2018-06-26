@@ -18,7 +18,7 @@ var BROWSER_SYNC_PORT = UI_PORT + 1;
  |
  */
 module.exports = {
-    "ui": {
+    "": {
         "port": UI_PORT,
         "weinre": {
             "port": WEINRE_PORT

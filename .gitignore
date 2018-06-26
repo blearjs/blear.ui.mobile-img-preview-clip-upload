@@ -23,7 +23,7 @@ atlassian-ide-plugin.xml
 # Crashlytics plugin (for Android Studio and IntelliJ)
 com_crashlytics_export_strings.xml
 crashlytics.properties
-crashlytics-build.properties
+crashlytics-bld.properties
 fabric.properties
 ### Windows template
 # Windows image file caches
@@ -93,7 +93,7 @@ coverage
 .lock-wscript
 
 # Compiled binary addons (http://nodejs.org/api/addons.html)
-build/Release
+bld/Release
 
 # Dependency directories
 node_modules
