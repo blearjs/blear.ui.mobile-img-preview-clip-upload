@@ -259,14 +259,14 @@ proto[_initTouchable] = function () {
         switch (the[_imageRoation]) {
             case 0:
             case 180:
-                the[_clipLeft] = (the[_imageWidth] - clipWidth) / 2;
-                the[_clipTop] = (the[_imageHeight] - clipHeight) / 2;
+                the[_clipLeft] = (the[_imageWidth] * the[_imageScale] - clipWidth) / 2;
+                the[_clipTop] = (the[_imageHeight] * the[_imageScale] - clipHeight) / 2;
                 break;
 
             case 90:
             case 270:
-                the[_clipLeft] = (the[_imageHeight] - clipWidth) / 2;
-                the[_clipTop] = (the[_imageWidth] - clipHeight) / 2;
+                the[_clipLeft] = (the[_imageHeight] * the[_imageScale] - clipWidth) / 2;
+                the[_clipTop] = (the[_imageWidth] * the[_imageScale] - clipHeight) / 2;
                 break;
         }
 
@@ -288,29 +288,35 @@ proto[_initTouchable] = function () {
     };
     // 自动修正：保证图片是水平或垂直的
     var pinchEnd = function () {
-        the[_imageRoation] %= 360;
+        currentR %= 360;
+
+        // 负值修正
+        if (currentR < 0) {
+            currentR += 360;
+        }
 
         // 0: < 45 || >= 315
         // 90: >= 45 && < 135
         // 180: >= 135 && < 225
         // 270: >= 225 && < 315
-        if (the[_imageRoation] >= 45 && the[_imageRoation] < 135) {
-            the[_imageRoation] = 90;
-        } else if (the[_imageRoation] >= 135 && the[_imageRoation] < 225) {
-            the[_imageRoation] = 180;
-        } else if (the[_imageRoation] >= 225 && the[_imageRoation] < 315) {
-            the[_imageRoation] = 270;
+        if (currentR >= 45 && currentR < 135) {
+            currentR = 90;
+        } else if (currentR >= 135 && currentR < 225) {
+            currentR = 180;
+        } else if (currentR >= 225 && currentR < 315) {
+            currentR = 270;
         } else {
-            the[_imageRoation] = 0;
+            currentR = 0;
         }
 
         // 仅缩放不旋转
         if (currentR === the[_imageRoation]) {
+            the[_imageScale] = currentS;
             transform();
         }
         // 仅旋转不缩放
         else {
-            currentR = the[_imageRoation];
+            the[_imageRoation] = currentR;
             currentS = 1;
             // 旋转之后重新适配到中心最大化
             the[_adaptImageInWindow]();
@@ -347,8 +353,6 @@ proto[_initTouchable] = function () {
     });
 
     the[_touchable].on('pinchEnd', function (meta) {
-        the[_imageRoation] += meta.rotation;
-        the[_imageScale] *= meta.scale;
         pinchEnd();
     });
 };
