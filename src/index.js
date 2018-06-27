@@ -73,7 +73,7 @@ var defaults = {
      */
     maskOptions: {
         bgColor: '#000',
-        opacity: 1
+        opacity: 0.85
     },
 
     /**
