@@ -40,6 +40,7 @@
     "blear.ui": "^1.0.8",
     "blear.ui.mask": "^1.2.0",
     "blear.ui.window": "^1.1.33",
+    "blear.utils.canvas-img": "^1.1.1",
     "blear.utils.compatible": "^1.0.7",
     "blear.utils.loader": "^1.0.7",
     "blear.utils.object": "^1.0.14"

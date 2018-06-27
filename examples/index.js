@@ -14,8 +14,8 @@ var MobileImgPreviewClipUpload = require('../src/index');
 var mip = new MobileImgPreviewClipUpload({
     clipWidth: 300,
     clipHeight: 200,
-    expectWidth: 600,
-    expectHeight: 400
+    expectWidth: 300,
+    expectHeight: 200
 });
 
 

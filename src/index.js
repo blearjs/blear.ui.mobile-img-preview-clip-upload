@@ -16,6 +16,7 @@ var attribute = require('blear.core.attribute');
 var selector = require('blear.core.selector');
 var compatible = require('blear.utils.compatible');
 var loader = require('blear.utils.loader');
+var canvasImage = require('blear.utils.canvas-img');
 var Touchable = require('blear.classes.touchable');
 
 var defaults = {
@@ -88,12 +89,10 @@ var reImage = /^image\//;
 var w = window;
 var URL = w[compatible.js('URL', w)];
 var namespace = 'blearui-mobileImgPreviewClipUpload';
-var initialTransform = {
-    translateX: 0,
-    translateY: 0,
-    scale: 1,
-    rotate: 0
-};
+var canvasEl = modification.create('canvas');
+
+canvasEl.style.outline = '2px solid #f00';
+modification.insert(canvasEl);
 
 var MobileImgPreviewClipUpload = UI.extend({
     className: 'MobileImgPreviewClipUpload',
@@ -168,7 +167,7 @@ var _imageX = sole();
 var _imageY = sole();
 var _imageScale = sole();
 var _imageMinScale = sole();
-var _imageRoation = sole();
+var _imageRotation = sole();
 var _clipLeft = sole();
 var _clipTop = sole();
 var _adaptImageInWindow = sole();
@@ -210,7 +209,7 @@ proto[_initWindow] = function () {
         attribute.style(the[_windowContainerEl], size);
         attribute.style(the[_containerEl], size);
         the[_imageEl].className = namespace + '-image';
-        the[_imageRoation] = 0;
+        the[_imageRotation] = 0;
         the[_adaptImageInWindow]();
         the[_adaptImageInClip]();
     });
@@ -236,12 +235,21 @@ proto[_initWindow] = function () {
         });
         the[_imageX] = the[_imageY] = 0;
         the[_imageScale] = 1;
-        the[_imageRoation] = 0;
+        the[_imageRotation] = 0;
     });
     event.on(the[_completeBtnEl], 'click', function () {
         var sel = the[_calculateSelection]();
+        var ctx = canvasEl.getContext('2d');
 
         console.log(sel);
+        canvasEl.width = sel.actualWidth;
+        canvasEl.height = sel.actualHeight;
+        ctx.save();
+        ctx.translate(sel.drawTranslateX, sel.drawTranslateY);
+        ctx.rotate(sel.drawRadian);
+        canvasImage.draw(canvasEl, the[_imageEl], sel);
+        ctx.restore();
+        the[_closeUI]();
     });
 };
 
@@ -271,7 +279,7 @@ proto[_initTouchable] = function () {
     };
     // 自动修正：保证图片有完整区域在裁剪区
     var transformEnd = function () {
-        switch (the[_imageRoation]) {
+        switch (the[_imageRotation]) {
             case 0:
             case 180:
                 the[_clipLeft] = (the[_imageWidth] * the[_imageScale] - clipWidth) / 2;
@@ -331,13 +339,13 @@ proto[_initTouchable] = function () {
         }
 
         // 仅缩放不旋转
-        if (currentR === the[_imageRoation]) {
+        if (currentR === the[_imageRotation]) {
             the[_imageScale] = currentS;
             transform();
         }
         // 仅旋转不缩放
         else {
-            the[_imageRoation] = currentR;
+            the[_imageRotation] = currentR;
             currentS = 1;
             // 旋转之后重新适配到中心最大化
             the[_adaptImageInWindow]();
@@ -364,10 +372,11 @@ proto[_initTouchable] = function () {
     });
 
     the[_touchable].on('pinch', function (meta) {
-        currentR = the[_imageRoation] + meta.rotation;
+        currentR = the[_imageRotation] + meta.rotation;
         currentS = the[_imageScale] * meta.scale;
         transform();
     });
+
 
     the[_touchable].on('pinchEnd', function (meta) {
         pinchEnd();
@@ -504,7 +513,7 @@ proto[_adaptImageInWindow] = function () {
     var fixRatio = 0;
     var vertical = false;
 
-    switch (the[_imageRoation]) {
+    switch (the[_imageRotation]) {
         case 0:
         case 180:
             imgRatio = imgWidth / imgHeight;
@@ -547,7 +556,7 @@ proto[_adaptImageInWindow] = function () {
         left: the[_imageLeft] = (winWidth - the[_imageWidth]) / 2,
         top: the[_imageTop] = (winHeight - the[_imageHeight]) / 2,
         transform: {
-            rotate: the[_imageRoation],
+            rotate: the[_imageRotation],
             scale: 1,
             translateX: 0,
             translateY: 0
@@ -566,10 +575,6 @@ proto[_adaptImageInClip] = function () {
     var clipHeight = options.clipHeight;
     var imageWidth = the[_imageWidth];
     var imageHeight = the[_imageHeight];
-    // var imageLeft = the[_imageLeft];
-    // var imageTop = the[_imageTop];
-    // var imageScale = the[_imageScale];
-    // var imageRotation = the[_imageRoation];
     the[_clipLeft] = (imageWidth - clipWidth) / 2;
     the[_clipTop] = (imageHeight - clipHeight) / 2;
     attribute.style(the[_cloneEl], {
@@ -578,7 +583,7 @@ proto[_adaptImageInClip] = function () {
         left: -the[_clipLeft],
         top: -the[_clipTop],
         transform: {
-            rotate: the[_imageRoation],
+            rotate: the[_imageRotation],
             scale: 1,
             translateX: 0,
             translateY: 0
@@ -616,51 +621,67 @@ proto[_closeUI] = function () {
 proto[_calculateSelection] = function () {
     var the = this;
     var options = the[_options];
+    var imageScale = the[_imageScale];
     var displayScale = the[_imageWidth] / the[_imageNatrualWidth];
-    var displayLeft = the[_clipLeft] - the[_imageX];
-    var displayTop = the[_clipTop] - the[_imageY];
     var clipWidth = options.clipWidth;
     var clipHeight = options.clipHeight;
-    var displayWidth = 0;
-    var displayHeight = 0;
+    var expectWidth = options.expectWidth;
+    var expectHeight = options.expectHeight;
     var srcLeft = 0;
     var srcTop = 0;
     var srcWidth = 0;
     var srcHeight = 0;
+    var rotation = the[_imageRotation];
+    var drawWidth = 0;
+    var drawHeight = 0;
+    var drawTranslateX = 0;
+    var drawTranslateY = 0;
+    var imageOriginWidth = the[_imageWidth];
+    var imageOriginHeight = the[_imageHeight];
+    var clipOriginLeft = (the[_clipLeft] - the[_imageX]) / imageScale;
+    var clipOriginTop = (the[_clipTop] - the[_imageY]) / imageScale;
+    var clipOriginWidth = clipWidth / imageScale;
+    var clipOriginHeight = clipHeight / imageScale;
 
-    switch (the[_imageRoation]) {
+    switch (rotation) {
         case 0:
-            srcLeft = displayLeft;
-            srcTop = displayTop;
-            srcWidth = clipWidth;
-            srcHeight = clipHeight;
+            srcLeft = clipOriginLeft;
+            srcTop = clipOriginTop;
+            srcWidth = clipOriginWidth;
+            srcHeight = clipOriginHeight;
+            drawWidth = expectWidth;
+            drawHeight = expectHeight;
             break;
 
         case 90:
-            displayWidth = the[_imageHeight];
-            displayHeight = the[_imageWidth];
-            srcLeft = displayTop;
-            srcTop = displayWidth - displayLeft - clipWidth;
-            srcWidth = clipHeight;
-            srcHeight = clipWidth;
+            srcLeft = clipOriginTop;
+            srcTop = imageOriginHeight - clipOriginLeft - clipOriginWidth;
+            srcWidth = clipOriginHeight;
+            srcHeight = clipOriginWidth;
+            drawWidth = expectHeight;
+            drawHeight = expectWidth;
+            drawTranslateX = expectWidth;
             break;
 
         case 180:
-            displayWidth = the[_imageWidth];
-            displayHeight = the[_imageHeight];
-            srcLeft = displayWidth - displayLeft - clipWidth;
-            srcTop = displayHeight - displayTop - clipHeight;
-            srcWidth = clipWidth;
-            srcHeight = clipHeight;
+            srcLeft = imageOriginWidth - clipOriginLeft - clipOriginWidth;
+            srcTop = imageOriginHeight - clipOriginTop - clipOriginHeight;
+            srcWidth = clipOriginWidth;
+            srcHeight = clipOriginHeight;
+            drawWidth = expectWidth;
+            drawHeight = expectHeight;
+            drawTranslateX = expectWidth;
+            drawTranslateY = expectHeight;
             break;
 
         case 270:
-            displayWidth = the[_imageHeight];
-            displayHeight = the[_imageWidth];
-            srcLeft = displayHeight - displayTop - clipHeight;
-            srcTop = displayLeft;
-            srcWidth = clipHeight;
-            srcHeight = clipWidth;
+            srcLeft = imageOriginWidth - clipOriginTop - clipOriginHeight;
+            srcTop = clipOriginLeft;
+            srcWidth = clipOriginHeight;
+            srcHeight = clipOriginWidth;
+            drawWidth = expectHeight;
+            drawHeight = expectWidth;
+            drawTranslateY = expectHeight;
             break;
     }
 
@@ -668,7 +689,14 @@ proto[_calculateSelection] = function () {
         srcLeft: srcLeft / displayScale,
         srcTop: srcTop / displayScale,
         srcWidth: srcWidth / displayScale,
-        srcHeight: srcHeight / displayScale
+        srcHeight: srcHeight / displayScale,
+        drawWidth: drawWidth,
+        drawHeight: drawHeight,
+        drawTranslateX: drawTranslateX,
+        drawTranslateY: drawTranslateY,
+        drawRadian: rotation * Math.PI / 180,
+        actualWidth: expectWidth,
+        actualHeight: expectHeight
     };
 };
 
