@@ -17,6 +17,7 @@ var selector = require('blear.core.selector');
 var compatible = require('blear.utils.compatible');
 var loader = require('blear.utils.loader');
 var canvasImage = require('blear.utils.canvas-img');
+var canvasContent = require('blear.utils.canvas-content');
 var Touchable = require('blear.classes.touchable');
 
 var defaults = {
@@ -91,8 +92,8 @@ var URL = w[compatible.js('URL', w)];
 var namespace = 'blearui-mobileImgPreviewClipUpload';
 var canvasEl = modification.create('canvas');
 
-canvasEl.style.outline = '2px solid #f00';
-modification.insert(canvasEl);
+// canvasEl.style.outline = '2px solid #f00';
+// modification.insert(canvasEl);
 
 var MobileImgPreviewClipUpload = UI.extend({
     className: 'MobileImgPreviewClipUpload',
@@ -115,7 +116,7 @@ var MobileImgPreviewClipUpload = UI.extend({
      */
     start: function () {
         var the = this;
-        var inputFileEl = the[_createInputFileEl]();
+        var inputFileEl = the[_inputFileEl] = the[_createInputFileEl]();
 
         inputFileEl.onchange = function () {
             var value = inputFileEl.value;
@@ -150,8 +151,8 @@ var _completeBtnEl = sole();
 var _mask = sole();
 var _touchable = sole();
 var _createInputFileEl = sole();
+var _inputFileEl = sole();
 var _preview = sole();
-var _initClip = sole();
 var _imageURL = sole();
 var _imageEl = sole();
 var _loadImage = sole();
@@ -163,8 +164,8 @@ var _imageWidth = sole();
 var _imageHeight = sole();
 var _imageLeft = sole();
 var _imageTop = sole();
-var _imageX = sole();
-var _imageY = sole();
+var _imageTranslateX = sole();
+var _imageTranslateY = sole();
 var _imageScale = sole();
 var _imageMinScale = sole();
 var _imageRotation = sole();
@@ -172,10 +173,10 @@ var _clipLeft = sole();
 var _clipTop = sole();
 var _adaptImageInWindow = sole();
 var _adaptImageInClip = sole();
-var _transformImage = sole();
 var _openUI = sole();
 var _closeUI = sole();
 var _calculateSelection = sole();
+var _upload = sole();
 var proto = MobileImgPreviewClipUpload.prototype;
 
 proto[_initWindow] = function () {
@@ -217,39 +218,12 @@ proto[_initWindow] = function () {
         the[_closeUI]();
     });
     event.on(the[_restoreBtnEl], 'click', function () {
-        attribute.style(the[_imageEl], {
-            transform: {
-                translateX: 0,
-                translateY: 0,
-                scale: 1,
-                rotate: 0
-            }
-        });
-        attribute.style(the[_cloneEl], {
-            transform: {
-                translateX: 0,
-                translateY: 0,
-                scale: 1,
-                rotate: 0
-            }
-        });
-        the[_imageX] = the[_imageY] = 0;
-        the[_imageScale] = 1;
         the[_imageRotation] = 0;
+        the[_adaptImageInWindow]();
+        the[_adaptImageInClip]();
     });
     event.on(the[_completeBtnEl], 'click', function () {
-        var sel = the[_calculateSelection]();
-        var ctx = canvasEl.getContext('2d');
-
-        console.log(sel);
-        canvasEl.width = sel.actualWidth;
-        canvasEl.height = sel.actualHeight;
-        ctx.save();
-        ctx.translate(sel.drawTranslateX, sel.drawTranslateY);
-        ctx.rotate(sel.drawRadian);
-        canvasImage.draw(canvasEl, the[_imageEl], sel);
-        ctx.restore();
-        the[_closeUI]();
+        the[_upload]();
     });
 };
 
@@ -305,8 +279,8 @@ proto[_initTouchable] = function () {
             currentY = -the[_clipTop];
         }
 
-        the[_imageX] = currentX;
-        the[_imageY] = currentY;
+        the[_imageTranslateX] = currentX;
+        the[_imageTranslateY] = currentY;
         transform();
     };
     // 自动修正：保证图片是水平或垂直的
@@ -357,13 +331,21 @@ proto[_initTouchable] = function () {
         el: the[_containerEl]
     });
 
+    the[_touchable].on('dragStart', function () {
+        // 其他地方可能修改该值，因此这里需要同步
+        currentX = the[_imageTranslateX];
+        currentY = the[_imageTranslateY];
+        currentS = the[_imageScale];
+        currentR = the[_imageRotation];
+    });
+
     the[_touchable].on('dragMove', function (meta) {
         if (meta.length > 1) {
             return;
         }
 
-        currentX = the[_imageX] + meta.deltaX;
-        currentY = the[_imageY] + meta.deltaY;
+        currentX = the[_imageTranslateX] + meta.deltaX;
+        currentY = the[_imageTranslateY] + meta.deltaY;
         transform();
     });
 
@@ -383,6 +365,9 @@ proto[_initTouchable] = function () {
     });
 };
 
+/**
+ * 初始化遮罩
+ */
 proto[_initMask] = function () {
     var the = this;
     var options = the[_options];
@@ -404,6 +389,10 @@ proto[_initEvent] = function () {
 
 };
 
+/**
+ * 创建 input:file
+ * @returns {Node}
+ */
 proto[_createInputFileEl] = function () {
     var the = this;
     var options = the[_options];
@@ -479,7 +468,7 @@ proto[_preview] = function (inputEl) {
 proto[_loadImage] = function () {
     var the = this;
 
-    the.emit('beforeLoading');
+    the.emit('beforeLoad');
     loader.img(the[_imageURL], function (err, img) {
         if (err) {
             return the.emit('error', err);
@@ -488,7 +477,7 @@ proto[_loadImage] = function () {
         the[_imageNatrualWidth] = img.width;
         the[_imageNatrualHeight] = img.height;
         the[_imageEl] = img;
-        the.emit('afterLoading');
+        the.emit('afterLoad');
         the[_openUI]();
     });
 };
@@ -548,8 +537,8 @@ proto[_adaptImageInWindow] = function () {
 
     the[_imageScale] = 1;
     the[_imageMinScale] = Math.max(clipWidth / displayWidth, clipHeight / displayHeight);
-    the[_imageX] = 0;
-    the[_imageY] = 0;
+    the[_imageTranslateX] = 0;
+    the[_imageTranslateY] = 0;
     attribute.style(imageEl, {
         width: the[_imageWidth] = vertical ? displayHeight : displayWidth,
         height: the[_imageHeight] = vertical ? displayWidth : displayHeight,
@@ -575,13 +564,12 @@ proto[_adaptImageInClip] = function () {
     var clipHeight = options.clipHeight;
     var imageWidth = the[_imageWidth];
     var imageHeight = the[_imageHeight];
-    the[_clipLeft] = (imageWidth - clipWidth) / 2;
-    the[_clipTop] = (imageHeight - clipHeight) / 2;
+
     attribute.style(the[_cloneEl], {
         width: imageWidth,
         height: imageHeight,
-        left: -the[_clipLeft],
-        top: -the[_clipTop],
+        left: -(imageWidth - clipWidth) / 2,
+        top: -(imageHeight - clipHeight) / 2,
         transform: {
             rotate: the[_imageRotation],
             scale: 1,
@@ -638,8 +626,8 @@ proto[_calculateSelection] = function () {
     var drawTranslateY = 0;
     var imageOriginWidth = the[_imageWidth];
     var imageOriginHeight = the[_imageHeight];
-    var clipOriginLeft = (the[_clipLeft] - the[_imageX]) / imageScale;
-    var clipOriginTop = (the[_clipTop] - the[_imageY]) / imageScale;
+    var clipOriginLeft = (the[_clipLeft] - the[_imageTranslateX]) / imageScale;
+    var clipOriginTop = (the[_clipTop] - the[_imageTranslateY]) / imageScale;
     var clipOriginWidth = clipWidth / imageScale;
     var clipOriginHeight = clipHeight / imageScale;
 
@@ -698,6 +686,39 @@ proto[_calculateSelection] = function () {
         actualWidth: expectWidth,
         actualHeight: expectHeight
     };
+};
+
+/**
+ * 上传
+ */
+proto[_upload] = function () {
+    var the = this;
+    var options = the[_options];
+    var sel = the[_calculateSelection]();
+    var ctx = canvasEl.getContext('2d');
+
+    canvasEl.width = sel.actualWidth;
+    canvasEl.height = sel.actualHeight;
+    ctx.save();
+    ctx.translate(sel.drawTranslateX, sel.drawTranslateY);
+    ctx.rotate(sel.drawRadian);
+    canvasImage.draw(canvasEl, the[_imageEl], sel);
+    ctx.restore();
+    the.emit('beforeUpload');
+    canvasContent.toBlob(canvasEl, {
+        type: options.drawType,
+        quality: options.drawQuality
+    }, function (blob) {
+        the[_options].onUpload(the[_inputFileEl], blob, function (err, url) {
+            if (err) {
+                the.emit('error', err);
+                return;
+            }
+
+            the[_closeUI]();
+            the.emit('afterUpload', url);
+        });
+    });
 };
 
 MobileImgPreviewClipUpload.defaults = defaults;

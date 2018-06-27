@@ -14,11 +14,14 @@ var MobileImgPreviewClipUpload = require('../src/index');
 var mip = new MobileImgPreviewClipUpload({
     clipWidth: 300,
     clipHeight: 200,
-    expectWidth: 300,
-    expectHeight: 200
+    expectWidth: 600,
+    expectHeight: 400
 });
-
 
 document.getElementById('start').onclick = function () {
     mip.start();
 };
+
+mip.on('error', function (err) {
+    alert(err.message);
+});
