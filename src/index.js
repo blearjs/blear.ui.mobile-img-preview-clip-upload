@@ -65,6 +65,21 @@ var defaults = {
      * @type String
      */
     drawType: 'image/jpeg',
+
+    /**
+     * 遮罩配置
+     */
+    maskOptions: {
+        bgColor: '#000',
+        opacity: 1
+    },
+
+    /**
+     * 上传
+     * @param fileInputEl
+     * @param blob
+     * @param done
+     */
     onUpload: function (fileInputEl, blob, done) {
         done(new Error('未配置 BLOB 上传'));
     }
@@ -128,6 +143,7 @@ var _window = sole();
 var _windowEl = sole();
 var _windowContainerEl = sole();
 var _containerEl = sole();
+var _cliperEl = sole();
 var _cloneEl = sole();
 var _cancelBtnEl = sole();
 var _restoreBtnEl = sole();
@@ -151,6 +167,7 @@ var _imageTop = sole();
 var _imageX = sole();
 var _imageY = sole();
 var _imageScale = sole();
+var _imageMinScale = sole();
 var _imageRoation = sole();
 var _clipLeft = sole();
 var _clipTop = sole();
@@ -175,20 +192,23 @@ proto[_initWindow] = function () {
     the[_windowEl] = the[_window].getWindowEl();
     the[_windowContainerEl] = the[_window].getContainerEl();
     the[_containerEl] = selector.query('.' + namespace + '-container', the[_windowContainerEl])[0];
+    the[_cliperEl] = selector.query('.' + namespace + '-cliper', the[_windowContainerEl])[0];
     the[_cloneEl] = selector.query('.' + namespace + '-clone', the[_windowContainerEl])[0];
     var btns = selector.query('.' + namespace + '-btn', the[_windowContainerEl]);
     the[_cancelBtnEl] = btns[0];
     the[_restoreBtnEl] = btns[1];
     the[_completeBtnEl] = btns[2];
-    attribute.style(the[_containerEl], {
+    attribute.style(the[_cliperEl], {
         width: options.clipWidth,
         height: options.clipHeight
     });
     the[_window].on('open', function (pos) {
-        attribute.style(the[_windowContainerEl], {
+        var size = {
             width: the[_windowWidth] = pos.width,
             height: the[_windowHeight] = pos.height
-        });
+        };
+        attribute.style(the[_windowContainerEl], size);
+        attribute.style(the[_containerEl], size);
         the[_imageEl].className = namespace + '-image';
         the[_imageRoation] = 0;
         the[_adaptImageInWindow]();
@@ -251,11 +271,6 @@ proto[_initTouchable] = function () {
     };
     // 自动修正：保证图片有完整区域在裁剪区
     var transformEnd = function () {
-        // 坐标系内的四要素
-        var viewClipLeft;
-        var viewClipTop;
-        var coordinateWidth;
-        var coordinateHeight;
         switch (the[_imageRoation]) {
             case 0:
             case 180:
@@ -288,6 +303,7 @@ proto[_initTouchable] = function () {
     };
     // 自动修正：保证图片是水平或垂直的
     var pinchEnd = function () {
+        // 1: 旋转修正
         currentR %= 360;
 
         // 负值修正
@@ -309,6 +325,11 @@ proto[_initTouchable] = function () {
             currentR = 0;
         }
 
+        // 2：缩放修正
+        if (currentS < the[_imageMinScale]) {
+            currentS = the[_imageMinScale];
+        }
+
         // 仅缩放不旋转
         if (currentR === the[_imageRoation]) {
             the[_imageScale] = currentS;
@@ -325,7 +346,7 @@ proto[_initTouchable] = function () {
     };
 
     the[_touchable] = new Touchable({
-        el: the[_windowEl]
+        el: the[_containerEl]
     });
 
     the[_touchable].on('dragMove', function (meta) {
@@ -339,10 +360,6 @@ proto[_initTouchable] = function () {
     });
 
     the[_touchable].on('dragEnd', function (meta) {
-        if (meta.length > 1) {
-            return;
-        }
-
         transformEnd();
     });
 
@@ -361,10 +378,7 @@ proto[_initMask] = function () {
     var the = this;
     var options = the[_options];
 
-    the[_mask] = new Mask({
-        bgColor: '#000',
-        opacity: 1
-    });
+    the[_mask] = new Mask(options.maskOptions);
 };
 
 
@@ -524,6 +538,7 @@ proto[_adaptImageInWindow] = function () {
     }
 
     the[_imageScale] = 1;
+    the[_imageMinScale] = Math.max(clipWidth / displayWidth, clipHeight / displayHeight);
     the[_imageX] = 0;
     the[_imageY] = 0;
     attribute.style(imageEl, {
@@ -577,7 +592,7 @@ proto[_adaptImageInClip] = function () {
 proto[_openUI] = function () {
     var the = this;
 
-    modification.insert(the[_imageEl], the[_windowContainerEl], 1);
+    modification.insert(the[_imageEl], the[_containerEl], 1);
     the[_cloneEl].src = the[_imageURL];
     the[_mask].open();
     the[_window].open();

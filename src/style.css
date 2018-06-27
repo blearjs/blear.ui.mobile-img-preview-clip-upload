@@ -3,6 +3,9 @@
   opacity: 0.382; }
 
 .blearui-mobileImgPreviewClipUpload-container {
+  position: relative; }
+
+.blearui-mobileImgPreviewClipUpload-cliper {
   position: absolute;
   top: 50%;
   left: 50%;
