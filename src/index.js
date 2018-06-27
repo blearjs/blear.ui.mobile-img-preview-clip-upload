@@ -169,12 +169,15 @@ var _imageTranslateY = sole();
 var _imageScale = sole();
 var _imageMinScale = sole();
 var _imageRotation = sole();
+var _imageCenterLeft = sole();
+var _imageCenterTop = sole();
 var _clipLeft = sole();
 var _clipTop = sole();
 var _adaptImageInWindow = sole();
 var _adaptImageInClip = sole();
 var _openUI = sole();
 var _closeUI = sole();
+var _calculateImageCenter = sole();
 var _calculateSelection = sole();
 var _upload = sole();
 var proto = MobileImgPreviewClipUpload.prototype;
@@ -333,8 +336,6 @@ proto[_initTouchable] = function () {
 
     the[_touchable].on('dragStart', function () {
         // 其他地方可能修改该值，因此这里需要同步
-        currentX = the[_imageTranslateX];
-        currentY = the[_imageTranslateY];
         currentS = the[_imageScale];
         currentR = the[_imageRotation];
     });
@@ -358,7 +359,6 @@ proto[_initTouchable] = function () {
         currentS = the[_imageScale] * meta.scale;
         transform();
     });
-
 
     the[_touchable].on('pinchEnd', function (meta) {
         pinchEnd();
@@ -564,12 +564,15 @@ proto[_adaptImageInClip] = function () {
     var clipHeight = options.clipHeight;
     var imageWidth = the[_imageWidth];
     var imageHeight = the[_imageHeight];
+    var centerLeft = (imageWidth - clipWidth) / 2;
+    var centerTop = (imageHeight - clipHeight) / 2;
 
+    the[_calculateImageCenter]();
     attribute.style(the[_cloneEl], {
         width: imageWidth,
         height: imageHeight,
-        left: -(imageWidth - clipWidth) / 2,
-        top: -(imageHeight - clipHeight) / 2,
+        left: -centerLeft,
+        top: -centerTop,
         transform: {
             rotate: the[_imageRotation],
             scale: 1,
@@ -601,6 +604,30 @@ proto[_closeUI] = function () {
     // the[_cloneEl].src = '';
     the[_mask].close();
     the[_window].close();
+};
+
+/**
+ * 计算图片在裁剪区域中心的坐标
+ */
+proto[_calculateImageCenter] = function () {
+    var the = this;
+    var options = the[_options];
+    var imageWidth = the[_imageWidth];
+    var imageHeight = the[_imageHeight];
+
+    switch (the[_imageRotation]) {
+        case 0:
+        case 180:
+            the[_imageCenterLeft] = imageWidth / 2;
+            the[_imageCenterTop] = imageHeight / 2;
+            break;
+
+        case 90:
+        case 270:
+            the[_imageCenterLeft] = imageHeight / 2;
+            the[_imageCenterTop] = imageWidth / 2;
+            break;
+    }
 };
 
 /**
