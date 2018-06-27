@@ -13,7 +13,10 @@
 
   &-image {
     position: absolute;
-    opacity: 1 - 0.618;
+  }
+
+  &-cover {
+    position: absolute;
   }
 
   &-container {

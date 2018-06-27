@@ -15,7 +15,10 @@ var mip = new MobileImgPreviewClipUpload({
     clipWidth: 300,
     clipHeight: 200,
     expectWidth: 600,
-    expectHeight: 400
+    expectHeight: 400,
+    maskOptions: {
+        opacity: 0.3
+    }
 });
 
 document.getElementById('start').onclick = function () {

@@ -9,8 +9,10 @@
   box-shadow: none; }
 
 .blearui-mobileImgPreviewClipUpload-image {
-  position: absolute;
-  opacity: 0.382; }
+  position: absolute; }
+
+.blearui-mobileImgPreviewClipUpload-cover {
+  position: absolute; }
 
 .blearui-mobileImgPreviewClipUpload-container {
   position: relative; }

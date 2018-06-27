@@ -77,6 +77,16 @@ var defaults = {
     },
 
     /**
+     * 图片覆盖的颜色
+     */
+    coverColor: '#000',
+
+    /**
+     * 图片覆盖的透明度
+     */
+    coverOpacity: 0.382,
+
+    /**
      * 上传
      * @param fileInputEl
      * @param blob
@@ -142,6 +152,7 @@ var _initTouchable = sole();
 var _window = sole();
 var _windowEl = sole();
 var _windowContainerEl = sole();
+var _coverEl = sole();
 var _containerEl = sole();
 var _cliperEl = sole();
 var _cloneEl = sole();
@@ -194,6 +205,7 @@ proto[_initWindow] = function () {
     the[_window].setHTML(require('./template.html'));
     the[_windowEl] = the[_window].getWindowEl();
     the[_windowContainerEl] = the[_window].getContainerEl();
+    the[_coverEl] = selector.query('.' + namespace + '-cover', the[_windowContainerEl])[0];
     the[_containerEl] = selector.query('.' + namespace + '-container', the[_windowContainerEl])[0];
     the[_cliperEl] = selector.query('.' + namespace + '-cliper', the[_windowContainerEl])[0];
     the[_cloneEl] = selector.query('.' + namespace + '-clone', the[_windowContainerEl])[0];
@@ -201,6 +213,10 @@ proto[_initWindow] = function () {
     the[_cancelBtnEl] = btns[0];
     the[_restoreBtnEl] = btns[1];
     the[_completeBtnEl] = btns[2];
+    attribute.style(the[_coverEl], {
+        background: options.coverColor,
+        opacity: options.coverOpacity
+    });
     attribute.style(the[_cliperEl], {
         width: options.clipWidth,
         height: options.clipHeight
@@ -252,6 +268,7 @@ proto[_initTouchable] = function () {
             }
         };
         attribute.style(the[_imageEl], style);
+        attribute.style(the[_coverEl], style);
         attribute.style(the[_cloneEl], style);
     };
     // 自动修正：保证图片有完整区域在裁剪区
@@ -539,7 +556,7 @@ proto[_adaptImageInWindow] = function () {
     the[_imageMinScale] = Math.max(clipWidth / displayWidth, clipHeight / displayHeight);
     the[_imageTranslateX] = 0;
     the[_imageTranslateY] = 0;
-    attribute.style(imageEl, {
+    var style = {
         width: the[_imageWidth] = vertical ? displayHeight : displayWidth,
         height: the[_imageHeight] = vertical ? displayWidth : displayHeight,
         left: the[_imageLeft] = (winWidth - the[_imageWidth]) / 2,
@@ -550,7 +567,9 @@ proto[_adaptImageInWindow] = function () {
             translateX: 0,
             translateY: 0
         }
-    });
+    };
+    attribute.style(the[_coverEl], style);
+    attribute.style(imageEl, style);
 };
 
 
