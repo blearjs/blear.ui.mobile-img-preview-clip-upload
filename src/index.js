@@ -583,8 +583,8 @@ proto[_adaptImageInClip] = function () {
     var clipHeight = options.clipHeight;
     var imageWidth = the[_imageWidth];
     var imageHeight = the[_imageHeight];
-    var centerLeft = (imageWidth - clipWidth) / 2;
-    var centerTop = (imageHeight - clipHeight) / 2;
+    var centerLeft = the[_clipLeft] = (imageWidth - clipWidth) / 2;
+    var centerTop = the[_clipTop] = (imageHeight - clipHeight) / 2;
 
     the[_calculateImageCenter]();
     attribute.style(the[_cloneEl], {
