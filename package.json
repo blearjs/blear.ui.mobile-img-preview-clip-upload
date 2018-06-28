@@ -43,7 +43,7 @@
     "blear.utils.canvas-content": "^1.0.2",
     "blear.utils.canvas-img": "^1.1.1",
     "blear.utils.compatible": "^1.0.7",
-    "blear.utils.loader": "^1.0.7",
+    "blear.utils.loader": "^1.0.10",
     "blear.utils.object": "^1.0.14"
   },
   "peerDependencies": {},

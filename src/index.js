@@ -126,6 +126,7 @@ var MobileImgPreviewClipUpload = UI.extend({
      */
     start: function () {
         var the = this;
+        modification.remove(the[_inputFileEl]);
         var inputFileEl = the[_inputFileEl] = the[_createInputFileEl]();
 
         inputFileEl.onchange = function () {
