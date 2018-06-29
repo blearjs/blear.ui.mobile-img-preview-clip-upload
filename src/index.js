@@ -106,10 +106,10 @@ var namespace = 'blearui-mobileImgPreviewClipUpload';
 var sourceEl = modification.create('canvas');
 var targetEl = modification.create('canvas');
 
-sourceEl.style.outline = '4px solid #888';
-modification.insert(sourceEl);
-targetEl.style.outline = '4px solid #f00';
-modification.insert(targetEl);
+// sourceEl.style.outline = '4px solid #888';
+// modification.insert(sourceEl);
+// targetEl.style.outline = '4px solid #f00';
+// modification.insert(targetEl);
 
 var MobileImgPreviewClipUpload = UI.extend({
     className: 'MobileImgPreviewClipUpload',
