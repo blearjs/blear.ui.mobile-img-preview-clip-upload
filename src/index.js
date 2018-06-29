@@ -505,7 +505,6 @@ proto[_loadImage] = function () {
 
         the[_imageNatrualWidth] = img.width;
         the[_imageNatrualHeight] = img.height;
-        alert(img.width + ',' + img.height);
         the[_imageEl] = img;
         the[_getImageOrientation]();
     });
@@ -527,7 +526,6 @@ proto[_getImageOrientation] = function () {
     var the = this;
     var callback = function (orientation) {
         the.emit('afterLoad');
-        alert(orientation);
         the[_imageOrientation] = orientation;
         the[_openUI]();
         the[_drawSourceImage]();
