@@ -99,11 +99,17 @@ var defaults = {
 var reImage = /^image\//;
 var w = window;
 var URL = w[compatible.js('URL', w)];
+var FileReader = w[compatible.js('FileReader', w)];
+var DataView = w[compatible.js('DataView', w)];
 var namespace = 'blearui-mobileImgPreviewClipUpload';
-var canvasEl = modification.create('canvas');
+// 绘制原图（如果原图有旋转、翻转，先还原），然后再用于目标绘制
+var sourceEl = modification.create('canvas');
+var targetEl = modification.create('canvas');
 
-// canvasEl.style.outline = '2px solid #f00';
-// modification.insert(canvasEl);
+sourceEl.style.outline = '4px solid #888';
+modification.insert(sourceEl);
+targetEl.style.outline = '4px solid #f00';
+modification.insert(targetEl);
 
 var MobileImgPreviewClipUpload = UI.extend({
     className: 'MobileImgPreviewClipUpload',
@@ -166,8 +172,12 @@ var _createInputFileEl = sole();
 var _inputFileEl = sole();
 var _preview = sole();
 var _imageURL = sole();
+var _imageFile = sole();
+var _imageOrientation = sole();
 var _imageEl = sole();
 var _loadImage = sole();
+var _getImageOrientation = sole();
+var _drawSourceImage = sole();
 var _imageNatrualWidth = sole();
 var _imageNatrualHeight = sole();
 var _windowWidth = sole();
@@ -476,6 +486,7 @@ proto[_preview] = function (inputEl) {
     }
 
     the[_imageURL] = URL.createObjectURL(file);
+    the[_imageFile] = file;
     the[_loadImage]();
 };
 
@@ -494,10 +505,174 @@ proto[_loadImage] = function () {
 
         the[_imageNatrualWidth] = img.width;
         the[_imageNatrualHeight] = img.height;
+        alert(img.width + ',' + img.height);
         the[_imageEl] = img;
-        the.emit('afterLoad');
-        the[_openUI]();
+        the[_getImageOrientation]();
     });
+};
+
+/**
+ * 获取图片的方向
+ * @ref https://www.daveperrett.com/articles/2012/07/28/exif-orientation-handling-is-a-ghetto/
+ * 1: 顺时针旋转0°
+ * 2: 水平翻转
+ * 3: 顺时针旋转180°
+ * 4: 垂直翻转
+ * 5: 顺时针旋转270°+水平翻转
+ * 6: 顺时针旋转270°
+ * 7: 顺时针旋转90°+水平翻转
+ * 8: 顺时针旋转90°
+ */
+proto[_getImageOrientation] = function () {
+    var the = this;
+    var callback = function (orientation) {
+        the.emit('afterLoad');
+        alert(orientation);
+        the[_imageOrientation] = orientation;
+        the[_openUI]();
+        the[_drawSourceImage]();
+    };
+
+    if (!FileReader || !DataView) {
+        return callback(1);
+    }
+
+    var reader = new FileReader();
+    reader.onerror = function (err) {
+        return the.emit('error', err);
+    };
+    reader.onload = function () {
+        var view = new DataView(this.result);
+
+        if (view.getUint16(0, false) !== 0xFFD8) {
+            return callback(1);
+        }
+
+        var length = view.byteLength;
+        var offset = 2;
+
+        while (offset < length) {
+            var marker = view.getUint16(offset, false);
+            offset += 2;
+            if (marker === 0xFFE1) {
+                if (view.getUint32(offset += 2, false) !== 0x45786966) {
+                    return callback(-1);
+                }
+
+                var little = view.getUint16(offset += 6, false) === 0x4949;
+                offset += view.getUint32(offset + 4, little);
+                var tags = view.getUint16(offset, little);
+                offset += 2;
+                for (var i = 0; i < tags; i++) {
+                    if (view.getUint16(offset + (i * 12), little) === 0x0112) {
+                        return callback(view.getUint16(offset + (i * 12) + 8, little));
+                    }
+                }
+            } else if ((marker & 0xFF00) !== 0xFF00) {
+                break;
+            } else {
+                offset += view.getUint16(offset, false);
+            }
+        }
+        return callback(1);
+    };
+    reader.readAsArrayBuffer(the[_imageFile]);
+};
+
+
+/**
+ * 绘制原图
+ */
+proto[_drawSourceImage] = function () {
+    var the = this;
+    // 克隆一个，避免对原图进行操作
+    // 因为：内存里读取到的图像和实际放在DOM里的图像的宽高是不一样的，如果旋转了的话
+    var imageEl = the[_imageEl].cloneNode();
+    var orientation = the[_imageOrientation];
+    var context = sourceEl.getContext('2d');
+    var width = the[_imageNatrualWidth];
+    var height = the[_imageNatrualHeight];
+    var translateX = 0;
+    var translateY = 0;
+    var scaleX = 1;
+    var scaleY = 1;
+    var rotation = 0;
+    var drawWidth = width;
+    var drawHeight = height;
+
+    sourceEl.width = width;
+    sourceEl.height = height;
+    sourceEl.style.width = width / 10 + 'px';
+    sourceEl.style.height = height / 10 + 'px';
+
+    switch (orientation) {
+        // 1: 顺时针旋转0°
+        case 1:
+            break;
+
+        // 2: 水平翻转
+        case 2:
+            translateX = width;
+            scaleX = -1;
+            break;
+
+        // 3: 顺时针旋转180°
+        case 3:
+            rotation = 180;
+            translateX = width;
+            translateY = height;
+            break;
+
+        // 4: 垂直翻转
+        case 4:
+            translateY = height;
+            scaleY = -1;
+            break;
+
+        // 5: 顺时针旋转270°+水平翻转
+        case 5:
+            rotation = 90;
+            scaleX = -1;
+            translateX = width;
+            drawWidth = height;
+            drawHeight = width;
+            break;
+
+        // 6: 顺时针旋转270°
+        case 6:
+            rotation = 90;
+            translateX = width;
+            drawWidth = height;
+            drawHeight = width;
+            break;
+
+        // 7: 顺时针旋转90°+水平翻转
+        case 7:
+            rotation = 270;
+            translateY = height;
+            scaleX = -1;
+            drawWidth = height;
+            drawHeight = width;
+            break;
+
+        // 8: 顺时针旋转90°
+        case 8:
+            rotation = 270;
+            drawWidth = height;
+            drawHeight = width;
+            translateY = height;
+            break;
+    }
+
+    context.save();
+    context.translate(translateX, translateY);
+    context.scale(scaleX, scaleY);
+    context.rotate(rotation * Math.PI / 180);
+    canvasImage.draw(sourceEl, imageEl, {
+        srcWidth: drawWidth,
+        srcHeight: drawHeight
+    });
+    context.restore();
 };
 
 /**
@@ -742,17 +917,17 @@ proto[_upload] = function () {
     var the = this;
     var options = the[_options];
     var sel = the[_calculateSelection]();
-    var ctx = canvasEl.getContext('2d');
+    var ctx = targetEl.getContext('2d');
 
-    canvasEl.width = sel.actualWidth;
-    canvasEl.height = sel.actualHeight;
+    targetEl.width = sel.actualWidth;
+    targetEl.height = sel.actualHeight;
     ctx.save();
     ctx.translate(sel.drawTranslateX, sel.drawTranslateY);
     ctx.rotate(sel.drawRadian);
-    canvasImage.draw(canvasEl, the[_imageEl], sel);
+    canvasImage.draw(targetEl, sourceEl, sel);
     ctx.restore();
     the.emit('beforeUpload');
-    canvasContent.toBlob(canvasEl, {
+    canvasContent.toBlob(targetEl, {
         type: options.drawType,
         quality: options.drawQuality
     }, function (blob) {
