@@ -144,7 +144,8 @@ var MobileImgPreviewClipUpload = UI.extend({
 
             the[_preview](inputFileEl);
         };
-        event.emit(inputFileEl, event.create('click', MouseEvent));
+        inputFileEl.click();
+        // event.emit(inputFileEl, event.create('click', MouseEvent));
         return the;
     }
 });
