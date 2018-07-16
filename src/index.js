@@ -165,7 +165,7 @@ var _containerEl = sole();
 var _cliperEl = sole();
 var _cloneEl = sole();
 var _cancelBtnEl = sole();
-var _restoreBtnEl = sole();
+var _rotateBtnEl = sole();
 var _completeBtnEl = sole();
 var _mask = sole();
 var _touchable = sole();
@@ -223,7 +223,7 @@ proto[_initWindow] = function () {
     the[_cloneEl] = selector.query('.' + namespace + '-clone', the[_windowContainerEl])[0];
     var btns = selector.query('.' + namespace + '-btn', the[_windowContainerEl]);
     the[_cancelBtnEl] = btns[0];
-    the[_restoreBtnEl] = btns[1];
+    the[_rotateBtnEl] = btns[1];
     the[_completeBtnEl] = btns[2];
     attribute.style(the[_coverEl], {
         background: options.coverColor,
@@ -248,8 +248,9 @@ proto[_initWindow] = function () {
     event.on(the[_cancelBtnEl], 'click', function () {
         the[_closeUI]();
     });
-    event.on(the[_restoreBtnEl], 'click', function () {
-        the[_imageRotation] = 0;
+    event.on(the[_rotateBtnEl], 'click', function () {
+        the[_imageRotation] += 90;
+        the[_imageRotation] %= 360;
         the[_adaptImageInWindow]();
         the[_adaptImageInClip]();
     });
