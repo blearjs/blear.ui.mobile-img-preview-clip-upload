@@ -87,6 +87,11 @@ var defaults = {
     coverOpacity: 0.382,
 
     /**
+     * 提示语句，可以 HTML
+     */
+    tips: '',
+
+    /**
      * 上传
      * @param fileInputEl
      * @param blob
@@ -163,6 +168,7 @@ var _windowContainerEl = sole();
 var _coverEl = sole();
 var _containerEl = sole();
 var _cliperEl = sole();
+var _tipsEl = sole();
 var _cloneEl = sole();
 var _cancelBtnEl = sole();
 var _rotateBtnEl = sole();
@@ -220,11 +226,13 @@ proto[_initWindow] = function () {
     the[_coverEl] = selector.query('.' + namespace + '-cover', the[_windowContainerEl])[0];
     the[_containerEl] = selector.query('.' + namespace + '-container', the[_windowContainerEl])[0];
     the[_cliperEl] = selector.query('.' + namespace + '-cliper', the[_windowContainerEl])[0];
+    the[_tipsEl] = selector.query('.' + namespace + '-tips', the[_windowContainerEl])[0];
     the[_cloneEl] = selector.query('.' + namespace + '-clone', the[_windowContainerEl])[0];
     var btns = selector.query('.' + namespace + '-btn', the[_windowContainerEl]);
     the[_cancelBtnEl] = btns[0];
     the[_rotateBtnEl] = btns[1];
     the[_completeBtnEl] = btns[2];
+    the[_tipsEl].innerHTML = options.tips;
     attribute.style(the[_coverEl], {
         background: options.coverColor,
         opacity: options.coverOpacity

@@ -83,6 +83,11 @@
 .blearui-mobileImgPreviewClipUpload-clone {
   position: absolute; }
 
+.blearui-mobileImgPreviewClipUpload-tips {
+  position: absolute;
+  top: 100%;
+  margin-top: 10px; }
+
 .blearui-mobileImgPreviewClipUpload-actions {
   position: absolute;
   bottom: 0;

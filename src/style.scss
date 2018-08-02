@@ -126,6 +126,12 @@
     position: absolute;
   }
 
+  &-tips {
+    position: absolute;
+    top: 100%;
+    margin-top: 10px;
+  }
+
   &-actions {
     position: absolute;
     bottom: 0;
