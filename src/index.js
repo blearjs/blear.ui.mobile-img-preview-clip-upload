@@ -111,10 +111,10 @@ var namespace = 'blearui-mobileImgPreviewClipUpload';
 var sourceEl = modification.create('canvas');
 var targetEl = modification.create('canvas');
 
-// sourceEl.style.outline = '4px solid #888';
-// modification.insert(sourceEl);
-// targetEl.style.outline = '4px solid #f00';
-// modification.insert(targetEl);
+sourceEl.style.outline = '4px solid #888';
+modification.insert(sourceEl);
+targetEl.style.outline = '4px solid #f00';
+modification.insert(targetEl);
 
 var MobileImgPreviewClipUpload = UI.extend({
     className: 'MobileImgPreviewClipUpload',
@@ -228,6 +228,7 @@ var _closeUI = sole();
 var _calculateImageCenter = sole();
 var _calculateSelection = sole();
 var _upload = sole();
+var _processing = sole();
 var proto = MobileImgPreviewClipUpload.prototype;
 
 proto[_initWindow] = function () {
@@ -956,6 +957,11 @@ proto[_upload] = function () {
     var sel = the[_calculateSelection]();
     var ctx = targetEl.getContext('2d');
 
+    if (the[_processing]) {
+        return;
+    }
+
+    the[_processing] = true;
     targetEl.width = sel.actualWidth;
     targetEl.height = sel.actualHeight;
     ctx.save();
@@ -963,14 +969,21 @@ proto[_upload] = function () {
     ctx.rotate(sel.drawRadian);
     canvasImage.draw(targetEl, sourceEl, sel);
     ctx.restore();
-    // the[_closeUI]();
-    // return;
+
+    // =========== test ===============
+    the[_processing] = false;
+    the[_closeUI]();
+    return;
+    // =========== test ===============
+
     the.emit('beforeUpload');
     canvasContent.toBlob(targetEl, {
         type: options.drawType,
         quality: options.drawQuality
     }, function (blob) {
         the[_options].onUpload(the[_inputFileEl], blob, function (err, url) {
+            the[_processing] = false;
+
             if (err) {
                 the.emit('error', err);
                 return;
