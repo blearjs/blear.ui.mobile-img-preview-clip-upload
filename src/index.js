@@ -111,10 +111,12 @@ var namespace = 'blearui-mobileImgPreviewClipUpload';
 var sourceEl = modification.create('canvas');
 var targetEl = modification.create('canvas');
 
-sourceEl.style.outline = '4px solid #888';
-modification.insert(sourceEl);
-targetEl.style.outline = '4px solid #f00';
-modification.insert(targetEl);
+// =========== test ===============
+// sourceEl.style.outline = '4px solid #888';
+// modification.insert(sourceEl);
+// targetEl.style.outline = '4px solid #f00';
+// modification.insert(targetEl);
+// =========== test ===============
 
 var MobileImgPreviewClipUpload = UI.extend({
     className: 'MobileImgPreviewClipUpload',
@@ -970,11 +972,11 @@ proto[_upload] = function () {
     canvasImage.draw(targetEl, sourceEl, sel);
     ctx.restore();
 
-    // =========== test ===============
-    the[_processing] = false;
-    the[_closeUI]();
-    return;
-    // =========== test ===============
+    // // =========== test ===============
+    // the[_processing] = false;
+    // the[_closeUI]();
+    // return;
+    // // =========== test ===============
 
     the.emit('beforeUpload');
     canvasContent.toBlob(targetEl, {
