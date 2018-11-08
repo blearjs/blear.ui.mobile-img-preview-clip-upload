@@ -820,8 +820,10 @@ proto[_openUI] = function () {
 
     modification.insert(the[_imageEl], the[_containerEl], 1);
     the[_cloneEl].src = the[_imageURL];
-    the[_mask].open();
-    the[_window].open();
+    // ！！微信：弹出遮罩后会影响页面高度，底部导航会出现，影响窗口高度
+    the[_mask].open(function () {
+        the[_window].open();
+    });
 };
 
 /**
