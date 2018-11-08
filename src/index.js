@@ -789,6 +789,14 @@ proto[_adaptImageInClip] = function () {
     var centerLeft = the[_clipLeft] = (imageWidth - clipWidth) / 2;
     var centerTop = the[_clipTop] = (imageHeight - clipHeight) / 2;
 
+    if (the[_imageRotation] === 90 || the[_imageRotation] === 270) {
+        the[_clipLeft] = (imageHeight - clipWidth) / 2;
+        the[_clipTop] = (imageWidth - clipHeight) / 2;
+    } else {
+        the[_clipLeft] = centerLeft;
+        the[_clipTop] = centerTop;
+    }
+
     the[_calculateImageCenter]();
     attribute.style(the[_cloneEl], {
         width: imageWidth,
@@ -953,6 +961,8 @@ proto[_upload] = function () {
     ctx.rotate(sel.drawRadian);
     canvasImage.draw(targetEl, sourceEl, sel);
     ctx.restore();
+    // the[_closeUI]();
+    // return;
     the.emit('beforeUpload');
     canvasContent.toBlob(targetEl, {
         type: options.drawType,
