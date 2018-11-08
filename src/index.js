@@ -152,6 +152,25 @@ var MobileImgPreviewClipUpload = UI.extend({
         inputFileEl.click();
         // event.emit(inputFileEl, event.create('click', MouseEvent));
         return the;
+    },
+
+    /**
+     * 关闭界面
+     * @returns {MobileImgPreviewClipUpload}
+     */
+    close: function () {
+        var the = this;
+        the[_closeUI]();
+        return the;
+    },
+
+    destroy: function () {
+        var the = this;
+
+        the[_window].destroy();
+        the[_touchable].destroy();
+        the[_mask].destroy();
+        MobileImgPreviewClipUpload.invoke('destroy', the);
     }
 });
 var sole = MobileImgPreviewClipUpload.sole;
