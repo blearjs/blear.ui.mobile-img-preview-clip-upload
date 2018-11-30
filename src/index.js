@@ -47,8 +47,8 @@ var defaults = {
     fileName: 'file',
 
     // 必须是清晰的约束条件
-    // @link http://frontenddev.org/article/under-the-chrome-input-file-accept-constraints-lead-to-pop-up-response-is-slow.html
-    fileAccept: 'image/png,image/jpg,image/jpeg,image/bmp',
+    // 部分安卓手机对 image/jpg 无法选择，设置 * 后可以
+    fileAccept: 'image/*',
 
     /**
      * 图片扩展名，使用英文逗号分隔开
