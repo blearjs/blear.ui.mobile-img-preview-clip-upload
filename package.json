@@ -1,6 +1,6 @@
 {
   "name": "blear.ui.mobile-img-preview-clip-upload",
-  "version": "1.0.14",
+  "version": "1.0.15",
   "description": "手机端图片预览、裁剪、上传",
   "scripts": {
     "live": "browser-sync start --config bs-config.js"
